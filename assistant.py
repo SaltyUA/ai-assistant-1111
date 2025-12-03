@@ -1,6 +1,7 @@
 import random
 from datetime import datetime
 import os
+import json
 
 #================Налаштування персонажу======================#
 
@@ -21,6 +22,106 @@ def load_personality(filename="persona.txt"):
 PERSONALITY = load_personality()
 
 mood = random.choice(["веселий", "спокійний", "саркастичний"])
+
+#================Функція завантаження імені користувача======================#
+
+def load_user():
+    if os.path.exists("user.json"):
+        try:
+            with open("user.json", "r", encoding="utf-8") as f:
+                text = f.read().strip()
+                if not text:
+                    return None
+                data = json.loads(text)
+                return data.get("name")
+        except:
+            return None
+    return None
+
+
+def get_user():
+    name = load_user()
+    if name:
+        return name
+
+    while True:
+        print(f"{NAME}: Як тебе звати?")
+        ask_username = input(f"Ти: ").strip()
+        if not ask_username:
+            print(f"{NAME}: Та ну! Назви себе нормально.")
+        else:
+            with open("user.json", "w", encoding="utf-8") as f:
+                json.dump({"name": ask_username}, f)
+            return ask_username
+
+#================Функції роботи з нотатками======================#
+
+def add_note(text):
+    with open("notes.txt", "a", encoding="utf-8") as f:
+        f.write(text + "\n")
+    return f"{NAME}: Я записав, але міг би й запам'ятати сам."
+
+def read_notes():
+    if not os.path.exists("notes.txt"):
+        return f"У тебе ще немає нотаток."
+
+    with open("notes.txt", "r", encoding="utf-8") as f:
+        lines = [x.strip() for x in f.readlines() if x.strip()]
+
+    if not lines:
+        return "Файл є, але нотатки порожні."
+    
+    result = ["Твої нотатки:"]
+    for i, line in enumerate(lines, 1):
+        result.append(f"{i}) {line}")
+
+    return "\n".join(result)
+
+def clear_notes():
+    with open("notes.txt", "w", encoding="utf-8") as f:
+        f.write("") 
+    return f"{NAME}: Готово. Нотатки стерті."
+
+#================Функції роботи з профілем======================#
+
+def add_fact(text):
+    if not os.path.exists("user.json"):
+        return "Файл профілю не знайдено."
+
+    with open("user.json", "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    if "facts" not in data:
+        data["facts"] = []
+
+    data["facts"].append(text)
+
+    with open("user.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+    return f"{NAME}: Додав. Ще один факт про тебе у моїй памʼяті."
+
+
+def show_profile():
+    if not os.path.exists("user.json"):
+        return "Профіль не знайдено."
+
+    with open("user.json", "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    out = []
+    if "name" in data:
+        out.append(f"Ім'я: {data['name']}")
+    if "favorite" in data:
+        out.append(f"Улюблена тема: {data['favorite']}")
+    if "level" in data:
+        out.append(f"Рівень: {data['level']}")
+    if "facts" in data:
+        out.append("Факти про тебе:")
+        for i, fact in enumerate(data["facts"], 1):
+            out.append(f"  {i}) {fact}")
+
+    return "\n".join(out) if out else "Профіль порожній."
 
 #================Варіанти відповідей======================#
 
@@ -103,12 +204,23 @@ def analyze(t):
         return "motivate"
     elif "час" in t or "скільки" in t:
         return "time"
-    elif "допомога" in t or "help" in t:
+    elif "допом" in t or "help" in t:
         return "help"
     elif "хто ти" in t or "що ти" in t:
         return "personal"
-    elif "погода" in t:
+    elif "погод" in t:
         return "weather"
+    elif "запиши в нотатки" in t or "додай в нотатки" in t:
+        return "add note"
+    elif "покажи нотатки" in t or "прочитай нотатки" in t:
+        return "read notes"
+    elif "профіль" in t:
+        return "profile"
+    elif "додай факт про мене" in t:
+        return "add fact"
+    elif "видали нотатки" in t:
+        return "clear notes"
+
     return "unknown"
 
 #================Головна функція відповіді======================#
@@ -116,6 +228,7 @@ def analyze(t):
 def get_response(text):
     t = text.lower()
     tag = analyze(t)
+    
     if tag=="empty":
         return random_empty()
     
@@ -129,7 +242,7 @@ def get_response(text):
         return random_personal()
 
     elif tag=="time":
-        return f"Зараз {datetime.now().strftime("%H:%M")}"
+        return f"Зараз {datetime.now().strftime('%H:%M')}"
 
     elif tag=="help":
         return f"На данний момент я можу реагувати на команди 'жарт', 'мотивація', 'хто я', 'час', 'погода'"
@@ -137,6 +250,29 @@ def get_response(text):
     elif tag=="weather":
         return f"За прогнозом - {random_weather()}"
     
+    elif tag=="add note":
+        print(f"{NAME}: Що саме мені записати?")
+        while True:
+            user_input = input("Ти: ").strip()
+            if user_input:
+                return add_note(user_input)
+            else:
+                print(f"{NAME}: Та ну! Напиши щось, щоб я міг це записати.")
+                    
+    elif tag=="read notes":
+        return read_notes()
+    
+    elif tag == "clear notes":
+        return clear_notes()
+
+    elif tag == "add fact":
+        print(f"{NAME}: Який факт мені записати про тебе?")
+        fact = input("Ти: ").strip()
+        return add_fact(fact)
+
+    elif tag == "profile":
+        return show_profile()
+
     else:
         return random_fallback()
     
@@ -144,6 +280,10 @@ def get_response(text):
 
 def main():
     print(PERSONALITY)
+    
+    user_name = get_user()
+    print(f"{NAME}: О, {user_name}, повернувся знову? Хаос скучив за тобою.")
+    
     print(f"{NAME}: {random_greeting()} Пиши що хочеш або 'exit', якщо вирішив втекти. Сьогодні я {mood}!")
 
     while True:
