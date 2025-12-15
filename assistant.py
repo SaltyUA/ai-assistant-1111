@@ -59,7 +59,7 @@ def get_user():
 def add_note(text):
     with open("notes.txt", "a", encoding="utf-8") as f:
         f.write(text + "\n")
-    return f"{NAME}: Я записав, але міг би й запам'ятати сам."
+    return f"Я записав, але міг би й запам'ятати сам."
 
 def read_notes():
     if not os.path.exists("notes.txt"):
@@ -80,7 +80,7 @@ def read_notes():
 def clear_notes():
     with open("notes.txt", "w", encoding="utf-8") as f:
         f.write("") 
-    return f"{NAME}: Готово. Нотатки стерті."
+    return f"Готово. Нотатки стерті."
 
 #================Функції роботи з профілем======================#
 
@@ -99,7 +99,7 @@ def add_fact(text):
     with open("user.json", "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
-    return f"{NAME}: Додав. Ще один факт про тебе у моїй памʼяті."
+    return f"Додав. Ще один факт про тебе у моїй памʼяті."
 
 
 def show_profile():
