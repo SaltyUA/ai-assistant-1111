@@ -1,32 +1,30 @@
-import requests
-import json
+from google import genai
+from google.genai import types
 
-API_KEY = "AIzaSyDgPdmLPaUdouJfmpEmphOygYOvoxCx6bQ"
+SYSTEM_INSTRUCTION = "Ти персональний помічник, розроблений для персонального використання студенто комп'ютерної академії. Твоя задача підказувати, але не виконувати завдання замість користувача. Відповідай українською мовою."
 
-url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 
-headers = {
-    "Content-Type" : "application/json",
-    "X-goog-api-key": API_KEY
-}
+client = genai.Client(api_key="key")
 
-payload = {
-    "contents": [
-        {
-        "parts":[
-            {
-                "text": "Привіт! Хто ти такий? Який у тебе настрій? Як справи?"
-                }
-        ]   
+
+def main():    
+    config  = types.GenerateContentConfig(
+        system_instruction = SYSTEM_INSTRUCTION,
+    )
     
-    }
-    ]
-}
-
-response = requests.post(url, headers=headers, json=payload)
-
-print(response.json()['candidates'][0]['content']['parts'][0]['text'])
-
-
-
-
+    while True:
+        user_input = input("Ти: ").strip() 
+        if not user_input:
+            print("Будь ласка, введіть повідомлення.")
+            continue
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=user_input,
+            config=config,
+        )
+        response_message = response.text
+        print("Jarvis:", response_message)
+       
+        
+if __name__ == "__main__":  
+    main()
